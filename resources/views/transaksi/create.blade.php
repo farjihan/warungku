@@ -23,8 +23,6 @@
             <h4 class="font-semibold mb-2">Barang yang Dibeli</h4>
             
             <div class="item mb-4 border p-3 rounded relative">
-                <button type="button" onclick="hapusItem(this)"
-                    class="absolute top-1 right-1 text-red-600">🗑</button>
 
                 <input type="text" placeholder="Cari barang..." class="search-barang w-full border rounded mb-2 p-1">
 
@@ -45,6 +43,23 @@
                     class="w-full border rounded harga-satuan" required>
             </div>
         </div>
+
+        <template id="item-template">
+    <div class="item mb-4 border p-3 rounded">
+        <input type="text" class="search-barang w-full border mb-2 rounded" placeholder="Cari barang..." />
+        <select name="barang_id[]" class="w-full border rounded mb-2" required>
+            @foreach ($barang as $b)
+                <option value="{{ $b->id }}" data-harga="{{ $b->harga_ecer }}">
+                    {{ $b->nama }} (Stok: {{ $b->stok }})
+                </option>
+            @endforeach
+        </select>
+        <input type="number" name="jumlah[]" placeholder="Jumlah" class="w-full border rounded mb-2" required>
+        <input type="number" name="harga_satuan[]" placeholder="Harga Jual" class="harga-satuan w-full border rounded" required>
+        <button type="button" onclick="hapusItem(this)" class="mt-2 bg-red-600 text-white px-3 py-1 rounded">🗑 Hapus</button>
+    </div>
+</template>
+
 
         <button type="button" onclick="tambahItem()"
             class="bg-gray-600 text-white px-4 py-1 mt-2 rounded">+ Tambah Barang</button>

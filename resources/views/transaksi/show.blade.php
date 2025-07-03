@@ -29,6 +29,9 @@
             </tbody>
         </table>
         <div class="mt-4">
+            <a href="{{ route('struk.show', $transaksi->id) }}" class="text-blue-600 ">Buat Struk</a>
+        </div>
+        <div class="mt-4">
             <a href="{{ route('transaksi.index') }}" class="text-blue-600 ">Kembali ke Daftar</a>
         </div>
     </div>
