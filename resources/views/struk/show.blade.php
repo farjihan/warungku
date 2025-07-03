@@ -1,9 +1,17 @@
 <x-app-layout>
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+
     <x-slot name="header">
         <h2 class="font-semibold text-xl">🧾 Struk Transaksi Warung</h2>
     </x-slot>
 
-    <div class="print:block max-w-lg mx-auto p-4 bg-white shadow-md rounded">
+    <div class="print:block max-w-lg mx-auto mt-5 p-4 bg-white shadow-md rounded">
         <p><strong>Tanggal:</strong> {{ $transaksi->tanggal }}</p>
         <p><strong>Pembeli:</strong> {{ $transaksi->pembeli ?? '-' }}</p>
 
@@ -33,94 +41,75 @@
     </div>
 
     <div class="print:hidden mt-6 text-center space-x-3">
-        <button onclick="kirimWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-            Kirim ke WhatsApp
+        <button onclick="printStruk()" class=" bg-gray-400 text-white px-4 py-2 border-none rounded ">Print 🖨️</button>
+        <button onclick="bukaOverlayWA()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            Kirim ke WhatsApp 📲
         </button>
+
+        <div id="area-prompt" class="p-4"></div>
         <a href="{{ route('transaksi.index') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
             ← Kembali
         </a>
     </div>
 
+    <!-- Overlay WhatsApp -->
+    <div id="wa-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Masukkan Nomor WhatsApp</h2>
+
+            <label for="wa-number" class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Nomor (628xx)</label>
+            <input type="text" id="wa-number"
+                class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="Contoh: 6281234567890">
+
+            <div class="flex justify-end mt-4 space-x-2">
+                <button onclick="tutupOverlayWA()"
+                    class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Batal</button>
+                <button onclick="kirimStrukWhatsApp()"
+                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Kirim</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        function kirimWhatsApp() {
-            const nomor = "628123456789"; // Ganti sesuai nomor pembeli
+        function printStruk() {
+            window.print();
+        }
+
+        window.onafterprint = function () {
+            window.location.href = "{{ route('transaksi.index') }}";
+        }
+
+        function bukaOverlayWA() {
+            document.getElementById('wa-overlay').classList.remove('hidden');
+        }
+
+        function tutupOverlayWA() {
+            document.getElementById('wa-overlay').classList.add('hidden');
+        }
+
+
+        function kirimStrukWhatsApp() {
+            const nomor = document.getElementById("wa-number").value;
+            if (!nomor) {
+                alert("Masukkan nomor WhatsApp terlebih dahulu.");
+                return;
+            }
+
             const pesan = encodeURIComponent(`🧾 *Struk Transaksi Warung*%0A
 Tanggal: {{ $transaksi->tanggal }}%0A
 Pembeli: {{ $transaksi->pembeli ?? '-' }}%0A
 Total: Rp{{ number_format($transaksi->total_harga) }}%0A
-Terima kasih 🙏`);
+Terima kasih telah belanja 🙏`);
 
-            const waAppURL = `whatsapp://send?phone=${nomor}&text=${pesan}`;
-            const waWebURL = `https://wa.me/${nomor}?text=${pesan}`;
+            const link = `https://wa.me/${nomor}?text=${pesan}`;
+            window.open(link, '_blank');
 
-            window.location.href = waAppURL;
-
-            setTimeout(() => {
-                window.open(waWebURL, '_blank');
-            }, 1000);
+            tutupOverlayWA();
         }
     </script>
-</x-app-layout>
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl">🧾 Struk Transaksi Warung</h2>
-    </x-slot>
 
-    <div class="print:block max-w-lg mx-auto p-4 bg-white shadow-md rounded">
-        <p><strong>Tanggal:</strong> {{ $transaksi->tanggal }}</p>
-        <p><strong>Pembeli:</strong> {{ $transaksi->pembeli ?? '-' }}</p>
 
-        <table class="w-full mt-4 border-collapse border">
-            <thead class="bg-gray-200">
-                <tr>
-                    <th class="border px-2 py-1">Barang</th>
-                    <th class="border px-2 py-1">Qty</th>
-                    <th class="border px-2 py-1">Harga</th>
-                    <th class="border px-2 py-1">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($transaksi->detail as $d)
-                    <tr class="text-center">
-                        <td class="border px-2 py-1">{{ $d->barang->nama }}</td>
-                        <td class="border px-2 py-1">{{ $d->jumlah }}</td>
-                        <td class="border px-2 py-1">Rp {{ number_format($d->harga_satuan) }}</td>
-                        <td class="border px-2 py-1">Rp {{ number_format($d->jumlah * $d->harga_satuan) }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
 
-        <p class="mt-4 font-bold">Total Bayar: Rp {{ number_format($transaksi->total_harga) }}</p>
-        <p class="text-sm mt-2">Terima kasih telah berbelanja 🙏</p>
-    </div>
 
-    <div class="print:hidden mt-6 text-center space-x-3">
-        <button onclick="kirimWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-            Kirim ke WhatsApp
-        </button>
-        <a href="{{ route('transaksi.index') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-            ← Kembali
-        </a>
-    </div>
-
-    <script>
-        function kirimWhatsApp() {
-            const nomor = "628123456789"; // Ganti sesuai nomor pembeli
-            const pesan = encodeURIComponent(`🧾 *Struk Transaksi Warung*%0A
-Tanggal: {{ $transaksi->tanggal }}%0A
-Pembeli: {{ $transaksi->pembeli ?? '-' }}%0A
-Total: Rp{{ number_format($transaksi->total_harga) }}%0A
-Terima kasih 🙏`);
-
-            const waAppURL = `whatsapp://send?phone=${nomor}&text=${pesan}`;
-            const waWebURL = `https://wa.me/${nomor}?text=${pesan}`;
-
-            window.location.href = waAppURL;
-
-            setTimeout(() => {
-                window.open(waWebURL, '_blank');
-            }, 1000);
-        }
-    </script>
 </x-app-layout>
