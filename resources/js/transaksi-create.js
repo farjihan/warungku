@@ -3,9 +3,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemTemplate = document.getElementById('item-template');
     const barangOptions = getOriginalOptions();
 
-    // Inisialisasi item awal
+    // Inisialisasi item awal yang sudah ada di halaman
     keranjang.querySelectorAll('.item').forEach(item => {
-        isiDropdown(item.querySelector('select'), barangOptions);
+        const select = item.querySelector('select');
+        const selectedValue = select.value;
+
+        // Isi ulang dropdown TANPA kehilangan selected
+        isiDropdown(select, barangOptions, selectedValue);
+
+        // Set harga default sesuai data-harga dari option yang terpilih
+        isiHarga(select);
+
         aktifkanPencarian(item);
     });
 
@@ -13,7 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const clone = itemTemplate.content.cloneNode(true);
         keranjang.appendChild(clone);
         const newItem = keranjang.lastElementChild;
-        isiDropdown(newItem.querySelector('select'), barangOptions);
+
+        const select = newItem.querySelector('select');
+        isiDropdown(select, barangOptions);
+
         aktifkanPencarian(newItem);
     };
 
@@ -36,13 +47,17 @@ function getOriginalOptions() {
     }));
 }
 
-function isiDropdown(select, options) {
+function isiDropdown(select, options, selectedValue = null) {
     select.innerHTML = '';
+
     options.forEach(opt => {
         const o = document.createElement('option');
         o.value = opt.value;
         o.text = opt.text;
         o.dataset.harga = opt.harga;
+        if (selectedValue && selectedValue == opt.value) {
+            o.selected = true;
+        }
         select.appendChild(o);
     });
 }
@@ -51,14 +66,17 @@ function aktifkanPencarian(item) {
     const select = item.querySelector('select');
     const input = item.querySelector('.search-barang');
     const hargaInput = item.querySelector('.harga-satuan');
-    const jumlahInput = item.querySelector('input[name="jumlah[]"]');
+
     const options = getOriginalOptions();
 
     select.addEventListener('change', () => isiHarga(select));
-    input?.addEventListener('input', () => {
-        const keyword = input.value.toLowerCase();
-        isiDropdown(select, options.filter(opt => opt.text.toLowerCase().includes(keyword)));
-    });
+
+    if (input) {
+        input.addEventListener('input', () => {
+            const keyword = input.value.toLowerCase();
+            isiDropdown(select, options.filter(opt => opt.text.toLowerCase().includes(keyword)));
+        });
+    }
 }
 
 function isiHarga(select) {

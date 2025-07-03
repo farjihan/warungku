@@ -30,6 +30,7 @@
         </table>
         <div class=" mt-4 mb-4 flex  space-x-72">
             <a href="{{ route('struk.show', $transaksi->id) }}" class="text-blue-600 ">Buat Struk</a>
+            <a href="{{ route('transaksi.edit', $transaksi->id) }}" class="text-yellow-600">Edit Transaksi</a>
             <form action="{{ route('transaksi.destroy', $transaksi->id) }}" method="POST"
                 onsubmit="return confirm('Hapus transaksi ini?')">
                 @csrf
