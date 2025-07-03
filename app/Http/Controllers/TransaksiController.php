@@ -75,6 +75,7 @@ class TransaksiController extends Controller
                 ]);
             }
 
+
             $transaksi->total_harga = $total;
             $transaksi->save();
 
@@ -114,37 +115,38 @@ class TransaksiController extends Controller
         $request->validate([
             'tanggal' => 'required|date',
             'barang_id' => 'required|array',
-            'barang_id.*' => 'exists:barangs, id',
+            'barang_id.*' => 'exists:barangs,id',
             'jumlah.*' => 'required|integer|min:1',
             'harga_satuan.*' => 'required|numeric|min:0',
         ]);
 
         DB::beginTransaction();
-        try {
-            $transaksi = Transaksi::with('detail')->findOrFail($id);
 
-            //kembalikan stok lama
-            foreach ($transaksi->detail() as $item) {
+        try {
+            $transaksi = Transaksi::with('detail.barang')->findOrFail($id);
+
+            // Kembalikan stok lama
+            foreach ($transaksi->detail as $item) {
                 $item->barang->stok += $item->jumlah;
                 $item->barang->save();
             }
 
-            //Hapus detail lama
+            // Hapus detail transaksi lama
             $transaksi->detail()->delete();
 
-            //Update data transaksi utama
+            // Perbarui transaksi utama
+
             $transaksi->update([
                 'tanggal' => $request->tanggal,
                 'pembeli' => $request->pembeli,
             ]);
 
-            //Simpan detail baru
             $total = 0;
 
             foreach ($request->barang_id as $i => $barang_id) {
                 $barang = Barang::findOrFail($barang_id);
-                $jumlah = request()->jumlah[$i] + $barang->jumlah;
-                $harga = request()->harga_satuan[$i];
+                $jumlah = $request->jumlah[$i]; // ini yang benar, bukan ditambah apa pun
+                $harga = $request->harga_satuan[$i];
 
                 if ($barang->stok < $jumlah) {
                     return back()->withErrors(['stok' => "Stok Barang {$barang->nama} tidak cukup"]);
@@ -156,7 +158,7 @@ class TransaksiController extends Controller
                 $subtotal = $jumlah * $harga;
                 $total += $subtotal;
 
-                DetailTransaksi::created([
+                DetailTransaksi::create([ // perhatikan: bukan "created"
                     'transaksi_id' => $transaksi->id,
                     'barang_id' => $barang->id,
                     'jumlah' => $jumlah,
@@ -164,18 +166,22 @@ class TransaksiController extends Controller
                     'subtotal' => $subtotal
                 ]);
             }
+
+
+
             $transaksi->update([
                 'total_harga' => $total,
             ]);
 
+
             DB::commit();
-            return redirect()->route('transaksi.index')->with('success', 'Transaksi Berhasil diperbarui.');
+            return redirect()->route('transaksi.index')->with('success', 'Transaksi berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Gagal memperbarui transaksi.']);
         }
-
     }
+
 
     /**
      * Remove the specified resource from storage.
