@@ -16,7 +16,7 @@
         </thead>
         <tbody>
             @foreach ($barangs as $barang)
-            <tr class="text-center">
+            <tr class="text-center border">
                 <td>{{ $barang->nama }}</td>
                 <td>{{ $barang->stok }}</td>
                 <td>Rp {{ number_format($barang->harga_ecer, 0, ',', ',') }}</td>
