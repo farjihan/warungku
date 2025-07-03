@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Http\Controllers;
+use App\Models\Barang;
+use App\Models\DetailTransaksi;
+use App\Models\Transaksi;
+use DB;
+use Illuminate\Http\Request;
+
+class TransaksiController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $transaksis = Transaksi::orderBy('tanggal', 'desc')->orderBy('created_at', 'desc')->get();
+        return view('transaksi.index', compact('transaksis'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $barang = Barang::all();
+        return view('transaksi.create', compact('barang'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'tanggal' => 'required|date',
+            'barang_id' => 'required|array',
+            'barang_id.*' => 'exists:barangs,id',
+            'jumlah.*' => 'required|integer|min:1',
+            'harga_satuan.*' => 'required|numeric|min:0',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $transaksi = Transaksi::create([
+                'tanggal' => $request->tanggal,
+                'pembeli' => $request->pembeli,
+                'total_harga' => 0,
+                'user_id' => auth()->id(),
+            ]);
+
+            $total = 0;
+
+            foreach ($request->barang_id as $index => $barang_id) {
+                $barang = Barang::findOrFail($barang_id);
+                $jumlah = $request->jumlah[$index];
+                $harga = $request->harga_satuan[$index];
+
+                if ($barang->stok < $jumlah) {
+                    return back()->withErrors(['stok' => "Stok barang {$barang->nama} tidak cukup"]);
+                }
+
+                $barang->stok -= $jumlah;
+                $barang->save();
+
+                $subtotal = $jumlah * $harga;
+                $total += $subtotal;
+
+                DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'barang_id' => $barang_id,
+                    'jumlah' => $jumlah,
+                    'harga_satuan' => $harga,
+                    'subtotal' => $subtotal,
+                ]);
+            }
+
+            $transaksi->total_harga = $total;
+            $transaksi->save();
+
+            DB::commit();
+            return redirect()->route('transaksi.index')->with('success', 'Transaksi multi-barang berhasil dicatat!');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan transaksi.']);
+        }
+    }
+
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Transaksi $transaksi)
+    {
+        $transaksi->load('detail.barang');
+        return view('transaksi.show', compact('transaksi'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+}
