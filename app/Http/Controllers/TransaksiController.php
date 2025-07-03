@@ -101,7 +101,9 @@ class TransaksiController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $transaksi = Transaksi::with('detail.barang')->findOrFail($id);
+        $barang = Barang::all();
+        return view('transaksi.edit', compact('transaksi', 'barang'));
     }
 
     /**
@@ -109,14 +111,99 @@ class TransaksiController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'tanggal' => 'required|date',
+            'barang_id' => 'required|array',
+            'barang_id.*' => 'exists:barangs, id',
+            'jumlah.*' => 'required|integer|min:1',
+            'harga_satuan.*' => 'required|numeric|min:0',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $transaksi = Transaksi::with('detail')->findOrFail($id);
+
+            //kembalikan stok lama
+            foreach ($transaksi->detail() as $item) {
+                $item->barang->stok += $item->jumlah;
+                $item->barang->save();
+            }
+
+            //Hapus detail lama
+            $transaksi->detail()->delete();
+
+            //Update data transaksi utama
+            $transaksi->update([
+                'tanggal' => $request->tanggal,
+                'pembeli' => $request->pembeli,
+            ]);
+
+            //Simpan detail baru
+            $total = 0;
+
+            foreach ($request->barang_id as $i => $barang_id) {
+                $barang = Barang::findOrFail($barang_id);
+                $jumlah = request()->jumlah[$i] + $barang->jumlah;
+                $harga = request()->harga_satuan[$i];
+
+                if ($barang->stok < $jumlah) {
+                    return back()->withErrors(['stok' => "Stok Barang {$barang->nama} tidak cukup"]);
+                }
+
+                $barang->stok -= $jumlah;
+                $barang->save();
+
+                $subtotal = $jumlah * $harga;
+                $total += $subtotal;
+
+                DetailTransaksi::created([
+                    'transaksi_id' => $transaksi->id,
+                    'barang_id' => $barang->id,
+                    'jumlah' => $jumlah,
+                    'harga_satuan' => $harga,
+                    'subtotal' => $subtotal
+                ]);
+            }
+            $transaksi->update([
+                'total_harga' => $total,
+            ]);
+
+            DB::commit();
+            return redirect()->route('transaksi.index')->with('success', 'Transaksi Berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Gagal memperbarui transaksi.']);
+        }
+
     }
 
     /**
      * Remove the specified resource from storage.
      */
+
     public function destroy(string $id)
     {
-        //
+        $transaksi = Transaksi::findOrFail($id);
+        DB::beginTransaction();
+
+        try {
+
+            foreach ($transaksi->detail as $item) {
+                $barang = $item->barang;
+                $barang->stok += $item->jumlah;
+                $barang->save();
+            }
+            $transaksi->detail()->delete();
+            $transaksi->delete();
+
+            DB::commit();
+            return redirect()->route('transaksi.index')->with('success', 'Transaksi berhasil dihapus dan stook dikembalikan.');
+
+        } catch (\Throwable $th) {
+            DB::rollback();
+            return back()->withErrors([
+                'error' => 'Gagal menghapus transaksi.'
+            ]);
+        }
     }
 }

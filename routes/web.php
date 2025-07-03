@@ -25,8 +25,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('transaksi', TransaksiController::class);
 
     //route struk
-    Route::get('/struk/{id}', [StrukController::class,'show'])->name('struk.show');
-    Route::get('/struk/{id}/pdf', [StrukController::class,'pdf'])->name('struk.pdf');
+    Route::get('/struk/{id}', [StrukController::class, 'show'])->name('struk.show');
+    Route::get('/struk/{id}/pdf', [StrukController::class, 'pdf'])->name('struk.pdf');
+
+    Route::get('/transaksi/{id}/edit', [TransaksiController::class, 'edit'])->name('transaksi.edit');
+    Route::put('/transaksi/{id}', [TransaksiController::class, 'update'])->name('transaksi.update');
+
 });
 
 

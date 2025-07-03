@@ -18,7 +18,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($transaksi->detail as $d )
+                @foreach ($transaksi->detail as $d)
                     <tr>
                         <td class="y-2 px-4 border">{{ $d->barang->nama }}</td>
                         <td class="y-2 px-4 border">{{ $d->jumlah }}</td>
@@ -28,8 +28,17 @@
                 @endforeach
             </tbody>
         </table>
-        <div class="mt-4">
+        <div class=" mt-4 mb-4 flex  space-x-72">
             <a href="{{ route('struk.show', $transaksi->id) }}" class="text-blue-600 ">Buat Struk</a>
+            <form action="{{ route('transaksi.destroy', $transaksi->id) }}" method="POST"
+                onsubmit="return confirm('Hapus transaksi ini?')">
+                @csrf
+                @method('DELETE')
+                <button class="text-red-500">Hapus</button>
+            </form>
+        </div>
+        <div class="mx-5">
+            
         </div>
         <div class="mt-4">
             <a href="{{ route('transaksi.index') }}" class="text-blue-600 ">Kembali ke Daftar</a>
