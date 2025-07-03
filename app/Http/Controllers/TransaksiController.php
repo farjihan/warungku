@@ -79,7 +79,7 @@ class TransaksiController extends Controller
             $transaksi->save();
 
             DB::commit();
-            return redirect()->route('transaksi.index')->with('success', 'Transaksi multi-barang berhasil dicatat!');
+            return redirect()->route('struk.show', $transaksi->id)->with('success', 'Transaksi multi-barang berhasil dicatat!');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan transaksi.']);
