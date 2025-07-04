@@ -96,14 +96,23 @@
                 return;
             }
 
-            const pesan = encodeURIComponent(`🧾 *Struk Transaksi Warung*%0A
-Tanggal: {{ $transaksi->tanggal }}%0A
-Pembeli: {{ $transaksi->pembeli ?? '-' }}%0A
-Total: Rp{{ number_format($transaksi->total_harga) }}%0A
-Terima kasih telah belanja 🙏`);
+        const pesan = `🧾 *Struk Transaksi Warung* 🧾
+📅 *Tanggal:* {{ $transaksi->tanggal }}
+👤 *Pembeli:* {{ $transaksi->pembeli ?? '-' }}
 
-            const link = `https://wa.me/${nomor}?text=${pesan}`;
-            window.open(link, '_blank');
+🛒 *Rincian Barang:*
+@foreach($transaksi->detail as $item)
+- {{ $item->barang->nama }} ({{ $item->jumlah }} x Rp{{ number_format($item->harga_satuan) }}) = *Rp{{ number_format($item->subtotal) }}*
+@endforeach
+
+💰 *Total:* *Rp{{ number_format($transaksi->total_harga) }}*
+
+🙏 Terima kasih telah berbelanja di warung kami!
+        `;
+
+        const encodedPesan = encodeURIComponent(pesan.trim());
+        const waURL = `https://api.whatsapp.com/send?phone=${nomor}&text=${encodeURIComponent(pesan)}`;
+        window.open(waURL, '_blank');
 
             tutupOverlayWA();
         }
