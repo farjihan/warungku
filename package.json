@@ -20,6 +20,7 @@
         "vite": "^6.2.4"
     },
     "dependencies": {
+        "build": "^0.1.4",
         "chart.js": "^4.5.0",
         "react": "^19.1.0",
         "react-chartjs-2": "^5.3.0",

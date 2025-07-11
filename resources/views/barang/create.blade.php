@@ -31,7 +31,7 @@
         <input type="text" name="harga_grosir" id="harga_grosir" class="w-full border p-2 rounded">
     </div>
     <div class="flex justify-end space-x-2">
-        <a href="{{ 'barang.index' }}" class="text-gray-600">Batal</a>
+        <a href="{{ route('barang.index') }}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Batal</a>
         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Simpan</button>
     </div>
   </form>

@@ -8,6 +8,19 @@
             <canvas id="chartMingguan"></canvas>
         </div>
     </div>
+
+    @if($barangHabis->count())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 mx-auto text-center max-w-md w-full" role="alert">
+            <strong class="font-bold">Peringatan!</strong>
+            <span class="block sm:inline">Barang berikut stoknya sudah mendekati habis:</span>
+            <ul class="list-disc pl-5 mt-2">
+                @foreach($barangHabis as $barang)
+                    <li>{{ $barang->nama }} (Stok: {{ $barang->stok }})</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

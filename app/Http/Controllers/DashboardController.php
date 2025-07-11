@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Barang;
 use App\Models\Transaksi;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+
 
 class DashboardController extends Controller
 {
@@ -30,6 +32,10 @@ class DashboardController extends Controller
             $data[]   = $raw[$day] ?? 0;
         }
 
-        return view('dashboard', compact('labels', 'data'));
+
+        $stokMinimal = 5;
+        $barangHabis = Barang::where('stok', '<=', $stokMinimal)->get();
+
+        return view('dashboard', compact('labels', 'data', 'barangHabis'));
     }
 }
